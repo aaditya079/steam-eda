@@ -22,7 +22,7 @@ Steam games dataset (\~114k games) — genres, pricing, user ratings, and review
 
 \## Visualizations
 
-\- Top 15 genres by game count
+- Top 15 genres by game count
 
 \- Price distribution of paid games
 
