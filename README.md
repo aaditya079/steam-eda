@@ -27,7 +27,7 @@ The Jupyter Notebook (`steam_eda.ipynb`) includes several detailed visualization
 
 1. **Clone the repository**:
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/aaditya079/steam-eda.git
    cd steam-eda
    ```
 
