@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam EDA Dashboard — Insights & Analytics</title>
+    <meta name="description" content="An interactive, high-performance Exploratory Data Analysis dashboard for Steam games, exploring pricing, genres, and ratings.">
+    
+    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- ApexCharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <style>
+        /* Modern Reset and CSS Variables */
+        :root {
+            --bg-base: #080b10;
+            --bg-surface: rgba(23, 26, 33, 0.7);
+            --bg-card: rgba(33, 44, 57, 0.45);
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --border-glow-hover: rgba(0, 242, 254, 0.4);
+            
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            
+            --steam-blue: #101822;
+            --steam-light-blue: #1b2838;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-magenta: #f857a6;
+            --accent-green: #05d5ff;
+            --accent-purple: #a18cd1;
+            
+            --font-display: 'Outfit', sans-serif;
+            --font-sans: 'Plus Jakarta Sans', sans-serif;
+            --transition-smooth: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3f5a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-blue);
+        }
+
+        body {
+            background: radial-gradient(circle at top, #131b26 0%, var(--bg-base) 70%);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Container Layout */
+        .app-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 20px 30px 40px 30px;
+        }
+
+        /* Premium Header */
+        header {
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px 40px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+        }
+
+        .header-title-area h1 {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 30%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title-area p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        /* Switch View Toggle */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            background: rgba(8, 11, 16, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 4px;
+            border-radius: 30px;
+            position: relative;
+        }
+
+        .toggle-btn {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 18px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            z-index: 2;
+        }
+
+        .toggle-btn.active {
+            color: var(--bg-base);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            height: 32px;
+            width: 150px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 20px;
+            transition: var(--transition-smooth);
+            z-index: 1;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.35);
+        }
+
+        /* Metrics Section */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-glow-hover);
+            box-shadow: 0 12px 30px rgba(0, 242, 254, 0.12);
+        }
+
+        .metric-icon-wrapper {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid rgba(0, 242, 254, 0.15);
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+        }
+
+        .metric-card:nth-child(2) .metric-icon-wrapper {
+            background: rgba(5, 213, 255, 0.08);
+            color: var(--accent-green);
+        }
+        .metric-card:nth-child(3) .metric-icon-wrapper {
+            background: rgba(248, 87, 166, 0.08);
+            color: var(--accent-magenta);
+            border-color: rgba(248, 87, 166, 0.15);
+        }
+        .metric-card:nth-child(4) .metric-icon-wrapper {
+            background: rgba(161, 140, 209, 0.08);
+            color: var(--accent-purple);
+            border-color: rgba(161, 140, 209, 0.15);
+        }
+
+        .metric-info h3 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .metric-number {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 4px;
+            color: #ffffff;
+        }
+
+        /* Charts Container */
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 25px;
+        }
+
+        /* Chart Card */
+        .chart-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
+            transition: var(--transition-smooth);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            min-height: 420px;
+        }
+
+        .chart-card:hover {
+            border-color: var(--border-glow-hover);
+            box-shadow: 0 12px 36px rgba(0, 242, 254, 0.08);
+        }
+
+        .chart-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-title h2 {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-title h2::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: linear-gradient(to bottom, var(--accent-cyan), var(--accent-blue));
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        .chart-desc {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .chart-body {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Dynamic Grid Layout Sizes */
+        .col-6 { grid-column: span 6; }
+        .col-12 { grid-column: span 12; }
+
+        /* Loader Overlay */
+        .chart-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 11, 16, 0.8);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+            transition: opacity 0.4s ease;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 242, 254, 0.1);
+            border-top: 3px solid var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            font-family: var(--font-display);
+            font-size: 13px;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        /* Static Fallback Matplotlib Images */
+        .static-chart-img {
+            max-width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            border-radius: 8px;
+            opacity: 0.9;
+            transition: transform 0.3s ease;
+        }
+
+        .static-chart-img:hover {
+            transform: scale(1.01);
+            opacity: 1;
+        }
+
+        /* Customized Tooltip Style for Scatter */
+        .custom-tooltip {
+            background: #141b25 !important;
+            border: 1px solid rgba(0, 242, 254, 0.25) !important;
+            padding: 12px 16px !important;
+            border-radius: 8px !important;
+            color: var(--text-primary) !important;
+            font-family: var(--font-sans) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+        }
+        
+        .tooltip-title {
+            font-weight: 700 !important;
+            color: #ffffff !important;
+            margin-bottom: 6px !important;
+            font-size: 14px !important;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 4px;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            font-size: 12px !important;
+            margin-top: 4px;
+        }
+
+        .tooltip-row span {
+            color: var(--text-secondary);
+        }
+
+        .tooltip-row strong {
+            color: var(--accent-cyan);
+        }
+
+        /* Footer Section */
+        footer {
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+        }
+
+        footer p {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+        }
+
+        footer a:hover {
+            color: var(--accent-blue);
+            text-shadow: 0 0 8px rgba(0, 242, 254, 0.4);
+        }
+
+        /* Hide elements helper */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .col-6 { grid-column: span 12; }
+            .header-title-area h1 { font-size: 26px; }
+        }
+
+        @media (max-width: 768px) {
+            .app-container { padding: 15px; }
+            header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+                padding: 20px;
+            }
+            .header-title-area h1 { justify-content: center; }
+            .metrics-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header>
+            <div class="header-title-area">
+                <h1 id="main-heading">🎮 Steam Games EDA Dashboard</h1>
+                <p>Exploratory Data Analysis — Decoding parameters that drive game popularity and success</p>
+            </div>
+            
+            <!-- Dashboard Mode Toggle -->
+            <div class="toggle-container" role="radiogroup" aria-label="Dashboard View Mode Selector">
+                <div class="toggle-slider" id="toggle-slider"></div>
+                <button class="toggle-btn active" id="btn-interactive" role="radio" aria-checked="true" tabindex="0">Interactive (ApexCharts)</button>
+                <button class="toggle-btn" id="btn-static" role="radio" aria-checked="false" tabindex="-1">Static (Matplotlib)</button>
+            </div>
+        </header>
+
+        <!-- KPI Metrics Grid -->
+        <section class="metrics-grid" aria-label="Key Performance Indicators">
+            
+            <!-- Metric 1: Total Games -->
+            <div class="metric-card" id="metric-total-games">
+                <div class="metric-icon-wrapper">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><path d="M6 12h12"></path><path d="M12 6v12"></path></svg>
+                </div>
+                <div class="metric-info">
+                    <h3>Total Games Analyzed</h3>
+                    <div class="metric-number" id="val-total-games" data-target="{{ stats.total_games }}">0</div>
+                </div>
+            </div>
+
+            <!-- Metric 2: Free Games -->
+            <div class="metric-card" id="metric-free-games">
+                <div class="metric-icon-wrapper">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <div class="metric-info">
+                    <h3>Free Games</h3>
+                    <div class="metric-number" id="val-free-games" data-target="{{ stats.free_games }}">0</div>
+                </div>
+            </div>
+
+            <!-- Metric 3: Paid Games -->
+            <div class="metric-card" id="metric-paid-games">
+                <div class="metric-icon-wrapper">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
+                </div>
+                <div class="metric-info">
+                    <h3>Paid Games</h3>
+                    <div class="metric-number" id="val-paid-games" data-target="{{ stats.paid_games }}">0</div>
+                </div>
+            </div>
+
+            <!-- Metric 4: Median Price -->
+            <div class="metric-card" id="metric-median-price">
+                <div class="metric-icon-wrapper">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <div class="metric-info">
+                    <h3>Median Paid Price</h3>
+                    <div class="metric-number" id="val-median-price" data-target="{{ stats.median_price }}">${{ stats.median_price }}</div>
+                </div>
+            </div>
+            
+        </section>
+
+        <!-- Main Charts Section -->
+        <main class="dashboard-content" id="dashboard-main">
+
+            <!-- Chart 1: Top 15 Genres -->
+            <section class="chart-card col-6" id="card-genres">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h2>Top 15 Genres by Game Count</h2>
+                        <p class="chart-desc">Shows which genres dominate Steam's massive library</p>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-loader" id="loader-genres">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Loading interactive chart...</div>
+                    </div>
+                    <!-- ApexCharts Element -->
+                    <div id="chart-genres-apex" style="width: 100%;"></div>
+                    <!-- Matplotlib Fallback Element -->
+                    <img src="/static/charts/top_genres.png" id="chart-genres-static" class="static-chart-img hidden" alt="Matplotlib Top Genres Chart">
+                </div>
+            </section>
+
+            <!-- Chart 2: Price Distribution -->
+            <section class="chart-card col-6" id="card-price-dist">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h2>Price Distribution of Paid Games</h2>
+                        <p class="chart-desc">Shows density and distribution of game pricing (under $25)</p>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-loader" id="loader-price-dist">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Loading interactive chart...</div>
+                    </div>
+                    <!-- ApexCharts Element -->
+                    <div id="chart-price-dist-apex" style="width: 100%;"></div>
+                    <!-- Matplotlib Fallback Element -->
+                    <img src="/static/charts/price_dist.png" id="chart-price-dist-static" class="static-chart-img hidden" alt="Matplotlib Price Distribution Chart">
+                </div>
+            </section>
+
+            <!-- Chart 3: Price vs Rating -->
+            <section class="chart-card col-6" id="card-price-rating">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h2>Price vs Rating Ratio</h2>
+                        <p class="chart-desc">Correlation between pricing structures and player reviews (50+ reviews)</p>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-loader" id="loader-price-rating">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Loading interactive chart...</div>
+                    </div>
+                    <!-- ApexCharts Element -->
+                    <div id="chart-price-rating-apex" style="width: 100%;"></div>
+                    <!-- Matplotlib Fallback Element -->
+                    <img src="/static/charts/price_vs_rating.png" id="chart-price-rating-static" class="static-chart-img hidden" alt="Matplotlib Price vs Rating Scatter Chart">
+                </div>
+            </section>
+
+            <!-- Chart 4: Top 15 Most Reviewed -->
+            <section class="chart-card col-6" id="card-top-reviewed">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h2>Top 15 Most Reviewed Games</h2>
+                        <p class="chart-desc">Steam's absolute blockbusters ordered by review counts</p>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-loader" id="loader-top-reviewed">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Loading interactive chart...</div>
+                    </div>
+                    <!-- ApexCharts Element -->
+                    <div id="chart-top-reviewed-apex" style="width: 100%;"></div>
+                    <!-- Matplotlib Fallback Element -->
+                    <img src="/static/charts/top_reviewed.png" id="chart-top-reviewed-static" class="static-chart-img hidden" alt="Matplotlib Top Reviewed Games Chart">
+                </div>
+            </section>
+
+            <!-- Chart 5: Genre Volume vs Rating -->
+            <section class="chart-card col-12" id="card-genre-rating">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <h2>Top 15 Genres — Game Volume vs Avg Rating Ratio</h2>
+                        <p class="chart-desc">Saves and plots the duality of popular genres compared to average satisfaction score</p>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div class="chart-loader" id="loader-genre-rating">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Loading interactive chart...</div>
+                    </div>
+                    <!-- ApexCharts Element -->
+                    <div id="chart-genre-rating-apex" style="width: 100%;"></div>
+                    <!-- Matplotlib Fallback Element -->
+                    <img src="/static/charts/genre_rating.png" id="chart-genre-rating-static" class="static-chart-img hidden" alt="Matplotlib Dual Axis Genre Chart">
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>Built by <strong>Aadi</strong> &middot; Steam Dataset (122k+ games) &middot; Powered by <a href="https://flask.palletsprojects.com/" target="_blank" rel="noopener">Flask</a>, <a href="https://pandas.pydata.org/" target="_blank" rel="noopener">Pandas</a>, <a href="https://matplotlib.org/" target="_blank" rel="noopener">Matplotlib</a>, and <a href="https://apexcharts.com/" target="_blank" rel="noopener">ApexCharts</a></p>
+        </footer>
+
+    </div>
+
+    <!-- Script Area for Animations and ApexCharts Rendering -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            // --- View Mode Toggle Action ---
+            const btnInteractive = document.getElementById("btn-interactive");
+            const btnStatic = document.getElementById("btn-static");
+            const toggleSlider = document.getElementById("toggle-slider");
+            
+            // Apex elements
+            const apexCharts = [
+                "chart-genres-apex", "chart-price-dist-apex", "chart-price-rating-apex", 
+                "chart-top-reviewed-apex", "chart-genre-rating-apex"
+            ];
+            
+            // Static elements
+            const staticCharts = [
+                "chart-genres-static", "chart-price-dist-static", "chart-price-rating-static", 
+                "chart-top-reviewed-static", "chart-genre-rating-static"
+            ];
+
+            // Loader elements
+            const loaders = [
+                "loader-genres", "loader-price-dist", "loader-price-rating", 
+                "loader-top-reviewed", "loader-genre-rating"
+            ];
+
+            function switchView(mode) {
+                if (mode === "interactive") {
+                    btnInteractive.classList.add("active");
+                    btnInteractive.setAttribute("aria-checked", "true");
+                    btnInteractive.setAttribute("tabindex", "0");
+                    
+                    btnStatic.classList.remove("active");
+                    btnStatic.setAttribute("aria-checked", "false");
+                    btnStatic.setAttribute("tabindex", "-1");
+                    
+                    toggleSlider.style.transform = "translateX(0px)";
+                    
+                    // Show Apex elements, hide Static ones
+                    apexCharts.forEach(id => document.getElementById(id).classList.remove("hidden"));
+                    staticCharts.forEach(id => document.getElementById(id).classList.add("hidden"));
+                    
+                    // Restore loaders for non-loaded apex charts
+                    loaders.forEach((id, idx) => {
+                        const chartEl = document.getElementById(apexCharts[idx]);
+                        if (chartEl.innerHTML === "") {
+                            document.getElementById(id).classList.remove("hidden");
+                        }
+                    });
+                } else {
+                    btnStatic.classList.add("active");
+                    btnStatic.setAttribute("aria-checked", "true");
+                    btnStatic.setAttribute("tabindex", "0");
+                    
+                    btnInteractive.classList.remove("active");
+                    btnInteractive.setAttribute("aria-checked", "false");
+                    btnInteractive.setAttribute("tabindex", "-1");
+                    
+                    // Center the slider over static button
+                    const btnWidth = btnInteractive.offsetWidth;
+                    toggleSlider.style.transform = `translateX(${btnWidth}px)`;
+                    
+                    // Hide Apex and Loaders, show Static
+                    apexCharts.forEach(id => document.getElementById(id).classList.add("hidden"));
+                    staticCharts.forEach(id => document.getElementById(id).classList.remove("hidden"));
+                    loaders.forEach(id => document.getElementById(id).classList.add("hidden"));
+                }
+            }
+
+            btnInteractive.addEventListener("click", () => switchView("interactive"));
+            btnStatic.addEventListener("click", () => switchView("static"));
+
+            // Support Keyboard Navigation for ARIA Role Toggles
+            [btnInteractive, btnStatic].forEach(btn => {
+                btn.addEventListener("keydown", (e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                        e.preventDefault();
+                        btn.click();
+                    } else if (e.key === "ArrowRight" && btn === btnInteractive) {
+                        btnStatic.focus();
+                        btnStatic.click();
+                    } else if (e.key === "ArrowLeft" && btn === btnStatic) {
+                        btnInteractive.focus();
+                        btnInteractive.click();
+                    }
+                });
+            });
+
+
+            // --- Count Up Animation for Metrics ---
+            function countUp(elementId, target, suffix = "", duration = 1200) {
+                const el = document.getElementById(elementId);
+                const start = 0;
+                const startTime = performance.now();
+                
+                function updateNumber(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    // Ease out cubic
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    const currentVal = Math.floor(start + easeProgress * (target - start));
+                    
+                    if (suffix === "$") {
+                        el.textContent = "$" + currentVal.toLocaleString();
+                    } else {
+                        el.textContent = currentVal.toLocaleString() + suffix;
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(updateNumber);
+                    } else {
+                        if (suffix === "$") {
+                            el.textContent = "$" + target.toLocaleString();
+                        } else if (suffix === ".median") {
+                            // Float representation
+                            el.textContent = "$" + target.toFixed(2);
+                        } else {
+                            el.textContent = target.toLocaleString() + suffix;
+                        }
+                    }
+                }
+                
+                requestAnimationFrame(updateNumber);
+            }
+
+            // Get targeted numbers from HTML data attributes
+            const totalGames = parseInt(document.getElementById("val-total-games").dataset.target);
+            const freeGames = parseInt(document.getElementById("val-free-games").dataset.target);
+            const paidGames = parseInt(document.getElementById("val-paid-games").dataset.target);
+            const medianPrice = parseFloat(document.getElementById("val-median-price").dataset.target);
+
+            // Execute Countup
+            countUp("val-total-games", totalGames);
+            countUp("val-free-games", freeGames);
+            countUp("val-paid-games", paidGames);
+            countUp("val-median-price", medianPrice, ".median");
+
+
+            // --- Load ApexCharts Dynamically via API Endpoints ---
+            const chartTheme = {
+                mode: 'dark',
+                palette: 'palette1',
+                monochrome: {
+                    enabled: false
+                }
+            };
+
+            const chartGridOptions = {
+                borderColor: 'rgba(255,255,255,0.06)',
+                strokeDashArray: 4,
+                xaxis: { lines: { show: false } },
+                yaxis: { lines: { show: true } }
+            };
+
+            // 1. TOP GENRES CHART
+            fetch('/api/charts/top-genres')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("loader-genres").classList.add("hidden");
+                    const options = {
+                        series: [{
+                            name: 'Game Count',
+                            data: data.values
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            toolbar: { show: false },
+                            background: 'transparent'
+                        },
+                        colors: ['#00f2fe'],
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                barHeight: '75%',
+                                borderRadius: 4,
+                                distributed: false
+                            }
+                        },
+                        dataLabels: { enabled: false },
+                        theme: chartTheme,
+                        grid: chartGridOptions,
+                        xaxis: {
+                            categories: data.labels,
+                            labels: { style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans' } }
+                        },
+                        yaxis: {
+                            labels: { style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans', fontSize: '11px' } }
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shade: 'dark',
+                                type: "horizontal",
+                                shadeIntensity: 0.5,
+                                gradientToColors: ['#4facfe'],
+                                inverseColors: true,
+                                opacityFrom: 0.85,
+                                opacityTo: 0.85,
+                                stops: [0, 100]
+                            }
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            y: {
+                                formatter: val => val.toLocaleString() + ' Games'
+                            }
+                        }
+                    };
+                    const chart = new ApexCharts(document.querySelector("#chart-genres-apex"), options);
+                    chart.render();
+                });
+
+            // 2. PRICE DISTRIBUTION CHART
+            fetch('/api/charts/price-dist')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("loader-price-dist").classList.add("hidden");
+                    const options = {
+                        series: [{
+                            name: 'Number of Games',
+                            data: data.values
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            toolbar: { show: false },
+                            background: 'transparent'
+                        },
+                        colors: ['#05d5ff'],
+                        plotOptions: {
+                            bar: {
+                                columnWidth: '85%',
+                                borderRadius: 3
+                            }
+                        },
+                        dataLabels: { enabled: false },
+                        theme: chartTheme,
+                        grid: chartGridOptions,
+                        xaxis: {
+                            categories: data.labels,
+                            labels: { 
+                                show: false, // hide verbose categories 
+                                style: { colors: '#9ca3af' }
+                            },
+                            title: {
+                                text: 'Price Bins ($0.01 - $25.00)',
+                                style: { color: '#9ca3af', fontFamily: 'Plus Jakarta Sans' }
+                            }
+                        },
+                        yaxis: {
+                            labels: { style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans' } }
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shade: 'dark',
+                                type: "vertical",
+                                shadeIntensity: 0.5,
+                                gradientToColors: ['#0072ff'],
+                                opacityFrom: 0.8,
+                                opacityTo: 0.4
+                            }
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            x: { show: true },
+                            y: { formatter: val => val.toLocaleString() + ' Games' }
+                        }
+                    };
+                    const chart = new ApexCharts(document.querySelector("#chart-price-dist-apex"), options);
+                    chart.render();
+                });
+
+            // 3. PRICE VS RATING SCATTER
+            fetch('/api/charts/price-vs-rating')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("loader-price-rating").classList.add("hidden");
+                    
+                    const options = {
+                        series: [{
+                            name: 'Games',
+                            data: data
+                        }],
+                        chart: {
+                            type: 'scatter',
+                            height: 350,
+                            zoom: {
+                                enabled: true,
+                                type: 'xy'
+                            },
+                            background: 'transparent',
+                            toolbar: {
+                                show: true,
+                                tools: {
+                                    download: false,
+                                    selection: true,
+                                    zoom: true,
+                                    zoomin: true,
+                                    zoomout: true,
+                                    pan: true,
+                                    reset: true
+                                }
+                            }
+                        },
+                        colors: ['#00f2fe'],
+                        theme: chartTheme,
+                        grid: chartGridOptions,
+                        xaxis: {
+                            tickAmount: 10,
+                            labels: {
+                                formatter: val => '$' + parseFloat(val).toFixed(0),
+                                style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans' }
+                            },
+                            title: {
+                                text: 'Price (USD)',
+                                style: { color: '#9ca3af', fontFamily: 'Plus Jakarta Sans' }
+                            },
+                            min: 0,
+                            max: 60
+                        },
+                        yaxis: {
+                            tickAmount: 5,
+                            labels: {
+                                formatter: val => (parseFloat(val) * 100).toFixed(0) + '%',
+                                style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans' }
+                            },
+                            title: {
+                                text: 'Positive Review Ratio',
+                                style: { color: '#9ca3af', fontFamily: 'Plus Jakarta Sans' }
+                            },
+                            min: 0,
+                            max: 1
+                        },
+                        markers: {
+                            size: 4,
+                            strokeWidth: 0,
+                            opacity: 0.45,
+                            hover: { size: 6, opacity: 0.95 }
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            custom: function({series, seriesIndex, dataPointIndex, w}) {
+                                const raw = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+                                return `
+                                    <div class="custom-tooltip">
+                                        <div class="tooltip-title">${raw.name}</div>
+                                        <div class="tooltip-row">
+                                            <span>Price:</span>
+                                            <strong>$${raw.x.toFixed(2)}</strong>
+                                        </div>
+                                        <div class="tooltip-row">
+                                            <span>Rating Ratio:</span>
+                                            <strong>${(raw.y * 100).toFixed(1)}%</strong>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }
+                    };
+                    const chart = new ApexCharts(document.querySelector("#chart-price-rating-apex"), options);
+                    chart.render();
+                });
+
+            // 4. TOP REVIEWED GAMES CHART
+            fetch('/api/charts/top-reviewed')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("loader-top-reviewed").classList.add("hidden");
+                    const options = {
+                        series: [{
+                            name: 'Total Reviews',
+                            data: data.values
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            toolbar: { show: false },
+                            background: 'transparent'
+                        },
+                        colors: ['#f857a6'],
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                barHeight: '75%',
+                                borderRadius: 4
+                            }
+                        },
+                        dataLabels: { enabled: false },
+                        theme: chartTheme,
+                        grid: chartGridOptions,
+                        xaxis: {
+                            categories: data.labels,
+                            labels: { 
+                                formatter: val => (val / 1000000).toFixed(1) + 'M',
+                                style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans' } 
+                            }
+                        },
+                        yaxis: {
+                            labels: { style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans', fontSize: '11px' } }
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shade: 'dark',
+                                type: "horizontal",
+                                shadeIntensity: 0.5,
+                                gradientToColors: ['#ff5858'],
+                                opacityFrom: 0.85,
+                                opacityTo: 0.85
+                            }
+                        },
+                        tooltip: {
+                            theme: 'dark',
+                            y: { formatter: val => val.toLocaleString() + ' Total Reviews' }
+                        }
+                    };
+                    const chart = new ApexCharts(document.querySelector("#chart-top-reviewed-apex"), options);
+                    chart.render();
+                });
+
+            // 5. GENRE VOLUME VS AVG RATING (COMBO CHART)
+            fetch('/api/charts/genre-rating')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("loader-genre-rating").classList.add("hidden");
+                    
+                    const options = {
+                        series: [
+                            {
+                                name: 'Game Count (Volume)',
+                                type: 'column',
+                                data: data.counts
+                            },
+                            {
+                                name: 'Avg Rating Ratio',
+                                type: 'line',
+                                data: data.ratings
+                            }
+                        ],
+                        chart: {
+                            height: 380,
+                            type: 'line',
+                            stacked: false,
+                            toolbar: { show: false },
+                            background: 'transparent'
+                        },
+                        stroke: {
+                            width: [0, 3],
+                            curve: 'smooth'
+                        },
+                        plotOptions: {
+                            bar: {
+                                columnWidth: '50%',
+                                borderRadius: 4
+                            }
+                        },
+                        colors: ['rgba(79, 172, 254, 0.7)', '#f857a6'],
+                        fill: {
+                            opacity: [0.85, 1],
+                            type: ['gradient', 'solid'],
+                            gradient: {
+                                shade: 'dark',
+                                type: 'vertical',
+                                shadeIntensity: 0.5,
+                                gradientToColors: ['#00f2fe'],
+                                opacityFrom: 0.85,
+                                opacityTo: 0.3
+                            }
+                        },
+                        labels: data.labels,
+                        grid: chartGridOptions,
+                        theme: chartTheme,
+                        xaxis: {
+                            labels: { style: { colors: '#9ca3af', fontFamily: 'Plus Jakarta Sans', fontSize: '11px' } }
+                        },
+                        yaxis: [
+                            {
+                                title: {
+                                    text: "Game Count",
+                                    style: { color: '#4facfe', fontFamily: 'Plus Jakarta Sans' }
+                                },
+                                labels: {
+                                    style: { colors: '#4facfe' },
+                                    formatter: val => val.toLocaleString()
+                                }
+                            },
+                            {
+                                opposite: true,
+                                title: {
+                                    text: "Average Rating Ratio",
+                                    style: { color: '#f857a6', fontFamily: 'Plus Jakarta Sans' }
+                                },
+                                min: 0.5, // since game average ranges high, focus in
+                                max: 1.0,
+                                labels: {
+                                    style: { colors: '#f857a6' },
+                                    formatter: val => (val * 100).toFixed(0) + '%'
+                                }
+                            }
+                        ],
+                        tooltip: {
+                            theme: 'dark',
+                            shared: true,
+                            intersect: false,
+                            y: [
+                                { formatter: val => val !== undefined ? val.toLocaleString() + ' Games' : undefined },
+                                { formatter: val => val !== undefined ? (val * 100).toFixed(1) + '%' : undefined }
+                            ]
+                        },
+                        legend: {
+                            horizontalAlign: 'center',
+                            fontFamily: 'Plus Jakarta Sans',
+                            markers: { radius: 12 },
+                            labels: { colors: '#9ca3af' }
+                        }
+                    };
+                    const chart = new ApexCharts(document.querySelector("#chart-genre-rating-apex"), options);
+                    chart.render();
+                });
+        });
+    </script>
+</body>
+</html>
