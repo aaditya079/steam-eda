@@ -1,79 +1,69 @@
-# Steam Games Exploratory Data Analysis (EDA) & Web Dashboard
+# Steam Games Exploratory Data Analysis & Dashboard
 
-![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
-![Flask](https://img.shields.io/badge/Flask-Web_App-000000.svg)
-![Pandas](https://img.shields.io/badge/Pandas-Data_Analysis-150458.svg)
-![ApexCharts](https://img.shields.io/badge/ApexCharts-Interactive_Visualization-FF4560.svg)
-![Seaborn](https://img.shields.io/badge/Seaborn-Static_Visualization-blueviolet.svg)
-
-An in-depth exploratory data analysis and high-performance interactive web dashboard analyzing over 114,000 games on Steam, exploring pricing structures, genres, user ratings, and review density.
+A Python and Flask project to analyze over 114k games in the Steam Games Dataset. Features a clean dark-mode dashboard with interactive charts (using ApexCharts) and a static fallback mode (Matplotlib).
 
 ---
 
-## 🔍 Critical Update: The Missing Comma Column-Shift Bug
+## Quick Setup
 
-During development, we discovered and resolved a major, structural column-shifting bug in how the raw Kaggle dataset (`data/games.csv`) was being parsed:
-* **The Cause**: The CSV header line was missing a comma between `Discount` and `DLC count` (merged as `DiscountDLC count`). This left the header line with 39 columns while all 122k+ data rows had 40 columns.
-* **The Impact**: Pandas automatically shifted the column headers. For 99.96% of the dataset, the **Game Name** was shifted into `AppID`, the **Release Date** was shifted into `Name`, and the **Discount Percentage** was loaded as the `Price`! Previous findings showing a median price of $51.00 were actually showing a median discount of 51%, and a date-filtering helper discarded 99.96% of games (including blockbusters like *Counter-Strike 2* and *Dota 2*).
-* **The Fix**: We explicitly supplied a custom corrected column headers list to `pd.read_csv` to align all 122,611 rows with their true attributes.
+### 1. Local Development (Flask App)
+This runs the full Python server locally, which loads and processes the dataset in-memory.
 
----
-
-## 📊 True Key Findings (Corrected)
-
-With the parsing alignment fixed, the correct data benchmarks are:
-* **True Free-to-Play Ratio**: Exactly **15.67%** (17,902 out of 114,198) of games on Steam are entirely free-to-play. 
-* **True Median Pricing**: The actual median price of a paid game on Steam is **$3.49** (demonstrating the massive long-tail distribution of low-cost indie games and budget titles). In fact, 90% of paid titles retail for under $12.00.
-* **Price ≠ Quality**: The correlation between a game's price and its positive rating ratio is near-zero (0.015), proving that price does not indicate better reception on Steam.
-* **Indie Dominance**: The `Indie` genre is by far the most popular by volume, with over 80,000 games, followed by `Action` (~47,000 games).
-
----
-
-## 💻 Web Dashboard Features
-
-We have built a gorgeous, high-performance web dashboard to visualizes these findings:
-* **Steam-Inspired Dark Theme**: Built with a sleek, glassmorphic layout using linear gradients of electric cyan and hot magenta.
-* **Sub-10ms Response Times**: Loads the dataset once on server startup and caches calculated data payloads and charts, ensuring instantaneous page rendering.
-* **ApexCharts Interactive Integration**: Fully animated horizontal and vertical bar charts, scatter plots with custom HTML hover tooltips displaying individual game names and coordinates, and a dual-axis volume vs. rating combo chart.
-* **Dashboard View Switcher**: A centered header sliding switch that allows users to toggle seamlessly between **Interactive Charts (ApexCharts)** and the **Static Fallback (Matplotlib)**.
-* **KPI Countup Animations**: Custom ease-out count-up numbers for all metrics on load.
-
----
-
-## 🚀 Usage Methods
-
-You can explore and run this dashboard in two different ways depending on your needs:
-
-### Method 1: Run Locally (Full Flask Web Server)
-This method launches a local development server that processes the raw dataset and serves dynamic, live requests.
-1. **Setup Environment**:
+1. **Install requirements**:
    ```bash
-   # Clone the repository
-   git clone https://github.com/aaditya079/steam-eda.git
-   cd steam-eda
-   
-   # Install dependencies
    pip install -r requirements.txt
    ```
-2. **Download the Data**: Download the `games.csv` file from [Kaggle](https://www.kaggle.com/datasets/fronkongames/steam-games-dataset) and place it inside a folder named `data/`.
-3. **Launch the Server**:
+2. **Add the data**: Grab `games.csv` from [Kaggle](https://www.kaggle.com/datasets/fronkongames/steam-games-dataset) and place it in a `data/` folder in the root directory.
+3. **Run it**:
    ```bash
    python app.py
    ```
-   Open your browser and navigate to `http://localhost:5000`.
+   Open `http://localhost:5000` in your browser.
 
-*Note: You can also explore the raw exploratory steps in the Jupyter Notebook by running `jupyter notebook steam_eda.ipynb`.*
+*Note: You can still run the Jupyter notebook (`steam_eda.ipynb`) locally for the raw EDA code.*
 
 ---
 
-### Method 2: Host Statically (GitHub Pages Deployment)
-Because GitHub Pages only supports static hosting (no active Python backend), we have implemented a **standalone static build mode**! 
-1. **How it works**: When `app.py` is executed locally, it automatically outputs pre-aggregated, lightweight JSON files for all metrics and visualizations into `static/api/`.
-2. **Relative Path Routing**: The root `index.html` detects if it is running on GitHub Pages and automatically routes data requests to fetch these local static JSON payloads relative to the repository base URL instead of querying the Flask server.
-3. **How to enable on GitHub Pages**:
-   - Go to your repository settings on GitHub.
-   - Select **Pages** from the sidebar menu.
-   - Under **Build and deployment**, set the source branch to `master` and the directory to `/ (root)`.
-   - Click Save. Your dashboard will be hosted instantly at `https://<your-username>.github.io/steam-eda/` with full interactive ApexCharts and animated transitions!
+### 2. Static Hosting (GitHub Pages)
+Since GitHub Pages only hosts static files, we added a standalone static build mode that loads pre-compiled JSON files:
+* When you run `app.py` locally, it automatically exports the aggregated metrics to `static/api/` as JSON payloads.
+* The frontend `index.html` checks the hostname. If it detects `github.io` (or a local file protocol), it relative-fetches these JSONs directly instead of hitting the Flask API.
+* **To enable**: Go to **Settings > Pages** on GitHub, select the `master` branch and `/ (root)` folder, then click Save.
+
+---
+
+## The Comma-Shift CSV Bug (Important)
+
+While parsing the Kaggle `games.csv` file, I found a weird formatting issue in the raw dataset:
+* The header line is missing a comma between `Discount` and `DLC count` (it reads as `DiscountDLC count`).
+* Because of this, the header line has 39 columns, but the data rows have 40 columns (since they actually have a comma there).
+* In previous analyses, this caused pandas to treat column 0 (AppID) as the index, shifting all header names by 1 to the right. 
+* This shift meant the `Price` column was actually reading the `Discount` column! That's why previous stats showed an incorrect median price of $51.00 (which was actually a median discount percentage of 51%).
+* It also caused the date-filtering helper to throw out 99.9% of the top games (like CS2, Dota 2, and PUBG) because their game names shifted into the date columns and got parsed as dates.
+
+**How it's fixed:** I manually defined the correct 40-column headers list in `app.py` and passed it as `names=cols` when loading the CSV, completely fixing the column alignment for all 122,611 rows.
+
+---
+
+## Corrected Key Metrics
+
+With the CSV parsing fixed, the actual Steam dataset stats are:
+* **Free-to-Play Ratio**: **15.67%** (17,902 out of 114,198 games) are actually free-to-play. (The old shifted parsing showed 64% free because it counted any game with "0% discount" as free).
+* **Median Pricing**: The actual median price of paid games is **$3.49** (demonstrating the massive tail of low-cost indie games and budget titles on Steam). 90% of paid games in this dataset are under $12.00.
+* **Price vs. Quality**: The correlation between a game's price and its positive rating ratio is near-zero (0.015), showing that price does not indicate better quality.
+* **Top 15 Most Reviewed**: The most-reviewed chart is now correctly populated with global blockbusters (Counter-Strike 2, PUBG, Dota 2, etc.) instead of being empty.
+
+---
+
+## Visuals & Frontend
+* **UI Theme**: Clean dark mode inspired by Steam, with glassmorphism panels.
+* **Metrics count-up**: Smooth JS number count-up on load.
+* **Interactive Mode (ApexCharts)**: Animated charts with custom hover tooltips showing game name, pricing, and exact ratings.
+* **Static Mode**: A toggle in the header switches the layout to render the original Matplotlib/Seaborn static images.
+* **Performance**: Sub-10ms response times because all data aggregation is cached in memory.
+
+---
+*Created by Aadi as a portfolio project.*
+
 
 
