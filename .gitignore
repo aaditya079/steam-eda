@@ -1,4 +1,19 @@
+# Exclude large CSV data files from GitHub (exceeds 100MB limit)
 data/
+outputs/
 *.csv
-__pycache__/
 .ipynb_checkpoints/
+
+# Python cache and environment files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+ENV/
+
+# OS specific files
+.DS_Store
+Thumbs.db
