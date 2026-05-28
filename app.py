@@ -170,8 +170,26 @@ def init_app_data():
         'counts': genre_stats['count'].tolist(),
         'ratings': [round(r, 3) for r in genre_stats['avg_rating'].tolist()]
     }
-    
     print("Application data ready!")
+    
+    # Save static JSON files in static/api/ for GitHub Pages hosting
+    static_api_path = 'static/api'
+    os.makedirs(static_api_path, exist_ok=True)
+    import json
+    
+    with open(f'{static_api_path}/stats.json', 'w', encoding='utf-8') as f:
+        json.dump(stats_cache, f)
+    with open(f'{static_api_path}/top-genres.json', 'w', encoding='utf-8') as f:
+        json.dump(chart_cache['top_genres'], f)
+    with open(f'{static_api_path}/price-dist.json', 'w', encoding='utf-8') as f:
+        json.dump(chart_cache['price_dist'], f)
+    with open(f'{static_api_path}/price-vs-rating.json', 'w', encoding='utf-8') as f:
+        json.dump(chart_cache['price_vs_rating'], f)
+    with open(f'{static_api_path}/top-reviewed.json', 'w', encoding='utf-8') as f:
+        json.dump(chart_cache['top_reviewed'], f)
+    with open(f'{static_api_path}/genre-rating.json', 'w', encoding='utf-8') as f:
+        json.dump(chart_cache['genre_rating'], f)
+    print("Static JSON files generated in static/api/!")
 
 # Trigger dataset parsing immediately on import
 init_app_data()

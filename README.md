@@ -40,32 +40,40 @@ We have built a gorgeous, high-performance web dashboard to visualizes these fin
 
 ---
 
-## 🚀 How to Run Locally
+## 🚀 Usage Methods
 
-### 1. Setup Environment
-```bash
-# Clone the repository
-git clone https://github.com/aaditya079/steam-eda.git
-cd steam-eda
+You can explore and run this dashboard in two different ways depending on your needs:
 
-# Install dependencies
-pip install -r requirements.txt
-```
+### Method 1: Run Locally (Full Flask Web Server)
+This method launches a local development server that processes the raw dataset and serves dynamic, live requests.
+1. **Setup Environment**:
+   ```bash
+   # Clone the repository
+   git clone https://github.com/aaditya079/steam-eda.git
+   cd steam-eda
+   
+   # Install dependencies
+   pip install -r requirements.txt
+   ```
+2. **Download the Data**: Download the `games.csv` file from [Kaggle](https://www.kaggle.com/datasets/fronkongames/steam-games-dataset) and place it inside a folder named `data/`.
+3. **Launch the Server**:
+   ```bash
+   python app.py
+   ```
+   Open your browser and navigate to `http://localhost:5000`.
 
-### 2. Download the Data
-Download the `games.csv` file from [Kaggle](https://www.kaggle.com/datasets/fronkongames/steam-games-dataset) and place it inside the `data/` directory.
-
-### 3. Launch the Web Dashboard
-```bash
-python app.py
-```
-Open your browser and navigate to **`http://localhost:5000`** to view the live dashboard.
-
-### 4. Run the Jupyter Notebook
-```bash
-jupyter notebook steam_eda.ipynb
-```
+*Note: You can also explore the raw exploratory steps in the Jupyter Notebook by running `jupyter notebook steam_eda.ipynb`.*
 
 ---
-*Developed by Aadi as a data science portfolio project.*
+
+### Method 2: Host Statically (GitHub Pages Deployment)
+Because GitHub Pages only supports static hosting (no active Python backend), we have implemented a **standalone static build mode**! 
+1. **How it works**: When `app.py` is executed locally, it automatically outputs pre-aggregated, lightweight JSON files for all metrics and visualizations into `static/api/`.
+2. **Relative Path Routing**: The root `index.html` detects if it is running on GitHub Pages and automatically routes data requests to fetch these local static JSON payloads relative to the repository base URL instead of querying the Flask server.
+3. **How to enable on GitHub Pages**:
+   - Go to your repository settings on GitHub.
+   - Select **Pages** from the sidebar menu.
+   - Under **Build and deployment**, set the source branch to `master` and the directory to `/ (root)`.
+   - Click Save. Your dashboard will be hosted instantly at `https://<your-username>.github.io/steam-eda/` with full interactive ApexCharts and animated transitions!
+
 
