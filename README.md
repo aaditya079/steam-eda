@@ -62,8 +62,5 @@ With the CSV parsing fixed, the actual Steam dataset stats are:
 * **Static Mode**: A toggle in the header switches the layout to render the original Matplotlib/Seaborn static images.
 * **Performance**: Sub-10ms response times because all data aggregation is cached in memory.
 
----
-*Created by Aadi as a portfolio project.*
-
 
 
