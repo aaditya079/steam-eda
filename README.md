@@ -24,14 +24,6 @@ This runs the full Python server locally, which loads and processes the dataset 
 
 ---
 
-### 2. Static Hosting (GitHub Pages)
-Since GitHub Pages only hosts static files, we added a standalone static build mode that loads pre-compiled JSON files:
-* When you run `app.py` locally, it automatically exports the aggregated metrics to `static/api/` as JSON payloads.
-* The frontend `index.html` checks the hostname. If it detects `github.io` (or a local file protocol), it relative-fetches these JSONs directly instead of hitting the Flask API.
-* **To enable**: Go to **Settings > Pages** on GitHub, select the `master` branch and `/ (root)` folder, then click Save.
-
----
-
 ## The Comma-Shift CSV Bug (Important)
 
 While parsing the Kaggle `games.csv` file, I found a weird formatting issue in the raw dataset:
